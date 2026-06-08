@@ -11,7 +11,7 @@ export function HistoryTable({ offers }: HistoryTableProps) {
   const formatCurrency = (val: number) => `R$ ${val.toFixed(2).replace('.', ',')}`;
   
   const generatePostText = (offer: Offer) => {
-    return `🔥 *OFERTA DA OBRA* 🔥\n\n🔨 *${offer.title}*\n\n💰 De: ${formatCurrency(offer.originalPrice)}\n✅ Por: ${formatCurrency(offer.price)}\n📉 Desconto: ${offer.discountPercentage}%\n\n🔗 Compre aqui: ${offer.link}\n\n#Construção #Ferramentas #Promoção #ObraBarataBrasil`;
+    return `🔥 OFERTA DA OBRA\n\n${offer.title}\n\n💰 De: ${formatCurrency(offer.originalPrice)}\n\n✅ Por: ${formatCurrency(offer.price)}\n\n📉 Desconto: ${offer.discountPercentage}%\n\n🔗 ${offer.link}\n\n#ObraBarataBrasil`;
   };
 
   const [copiedId, setCopiedId] = React.useState<string | null>(null);

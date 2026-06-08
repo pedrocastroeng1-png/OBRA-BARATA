@@ -12,6 +12,8 @@ export interface Offer {
   dateAdded: string;
   dateProcessed?: string;
   ranking: 'Excelente' | 'Boa' | 'Regular';
+  score: number;
+  freeShipping: boolean;
 }
 
 export interface Stats {
