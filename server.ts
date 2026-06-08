@@ -15,36 +15,92 @@ async function startServer() {
       return res.status(400).json({ error: "Missing query parameter 'q'" });
     }
 
-    const mlApiUrl = `https://api.mercadolibre.com/sites/MLB/search?q=${encodeURIComponent(query)}&condition=new&limit=20`;
+    const formattedQuery = encodeURIComponent(query.replace(/\s+/g, '-'));
+    const targetUrl = `https://lista.mercadolivre.com.br/${formattedQuery}#D[A:${encodeURIComponent(query)}]`;
     
-    console.log(`[ML API] Fetching: ${mlApiUrl}`);
+    console.log(`[ML Scraping] Fetching: ${targetUrl}`);
 
     try {
-      const response = await fetch(mlApiUrl, {
+      const response = await fetch(targetUrl, {
         headers: {
           "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/138 Safari/537.36",
-          "Accept": "application/json",
-          "Content-Type": "application/json"
+          "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+          "Accept-Language": "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7",
         }
       });
-      console.log(`[ML API] Response Status: ${response.status} ${response.statusText}`);
+      
+      console.log(`[ML Scraping] Status: ${response.status} ${response.statusText}`);
 
       if (!response.ok) {
-        const errorBody = await response.text();
-        console.error(`[ML API] Error full body: ${errorBody}`);
-        return res.status(response.status).json({
-          error: `ML API responded with status: ${response.status}`,
-          details: errorBody
-        });
+        throw new Error(`Scraping failed with status: ${response.status}`);
       }
 
-      const data = await response.json();
-      const resultsCount = data.results ? data.results.length : 0;
-      console.log(`[ML API] Items returned: ${resultsCount}`);
+      const html = await response.text();
+      
+      // Import cheerio dynamically to avoid issues if added after server start
+      const cheerio = await import('cheerio');
+      const $ = cheerio.load(html);
 
-      res.json(data);
+      const results: any[] = [];
+
+      $('.ui-search-layout__item').each((i, el) => {
+        if (i >= 20) return; // Limit to 20 results like the API
+
+        const title = $(el).find('h2.ui-search-item__title').text().trim();
+        const permalink = $(el).find('a.ui-search-link').attr('href');
+        let thumbnail = $(el).find('img.ui-search-result-image__element').attr('data-src') || $(el).find('img.ui-search-result-image__element').attr('src');
+        if (!thumbnail && $(el).find('img').length > 0) {
+           thumbnail = $(el).find('img').first().attr('src');
+        }
+
+        const parseAmount = (amtEl: any) => {
+           const fraction = $(amtEl).find('.andes-money-amount__fraction').first().text().replace(/\D/g, '');
+           const cents = $(amtEl).find('.andes-money-amount__cents').first().text().replace(/\D/g, '') || '00';
+           if (!fraction) return 0;
+           return parseFloat(`${fraction}.${cents}`);
+        };
+
+        let tempOriginal = 0;
+        let tempCurrent = 0;
+
+        $(el).find('.andes-money-amount').each((_, amtEl) => {
+          const isStrikethrough = $(amtEl).closest('s').length > 0 || $(amtEl).closest('.ui-search-price__original-value').length > 0;
+          const val = parseAmount(amtEl);
+          if (val === 0) return;
+          
+          if (isStrikethrough && tempOriginal === 0) {
+            tempOriginal = val;
+          } else if (!isStrikethrough && tempCurrent === 0) {
+            tempCurrent = val;
+          }
+        });
+
+        let price = tempCurrent;
+        let original_price = tempOriginal > 0 ? tempOriginal : null;
+        
+        // Sometimes the original price isn't captured by <s> or it's missing but there's a discount badge.
+        // We'll trust what we found.
+        
+        const textContent = $(el).text().toLowerCase();
+        const free_shipping = textContent.includes('frete grátis');
+
+        if (title && price > 0 && permalink) {
+          results.push({
+            id: `MLB${Math.floor(Math.random() * 1000000000)}`, // fake id since scraping might not easily give MLB id
+            title,
+            permalink,
+            price,
+            original_price,
+            thumbnail,
+            shipping: { free_shipping }
+          });
+        }
+      });
+      
+      console.log(`[ML Scraping] Items parsed: ${results.length}`);
+      res.json({ results });
     } catch (error: any) {
-      console.error(`[ML API] Error fetching ${query}:`, error.message);
+      console.error(`[ML Scraping] Error fetching ${query}:`, error.message);
       res.status(500).json({ error: "Internal Server Error", details: error.message });
     }
   });

@@ -43,6 +43,29 @@ export default function App() {
     saveStoredKeywords(keywords);
   }, [keywords]);
 
+  const handleFetchBoschOnly = async () => {
+    setIsFetching(true);
+    setLoadingText('Buscando: Bosch (Teste)');
+    
+    try {
+      const fetchedOffers = await fetchMercadoLivreOffers(["Bosch"], (keyword) => {
+        setLoadingText(`Buscando: ${keyword}`);
+      });
+      
+      const combined = mergeNewOffers(offers, fetchedOffers);
+      setOffers(combined);
+      
+      const now = new Date().toISOString();
+      setLastUpdate(now);
+      setLastUpdateState(now);
+    } catch (error) {
+      console.error("Fetch failed", error);
+    } finally {
+      setIsFetching(false);
+      setLoadingText('');
+    }
+  };
+
   const handleFetchOffers = async (fetchAll: boolean = false) => {
     setIsFetching(true);
     setLoadingText('Buscando...');
@@ -115,23 +138,32 @@ export default function App() {
                   </span>
                 </h2>
                 
-                <button
-                  onClick={() => handleFetchOffers(true)}
-                  disabled={isFetching}
-                  className="bg-black hover:bg-gray-800 text-white px-5 py-2.5 rounded-lg font-bold flex items-center justify-center gap-2 transition-all disabled:opacity-70 shadow-lg shadow-black/10"
-                >
-                  {isFetching ? (
-                    <>
-                      <Loader2 size={18} className="animate-spin" />
-                      {loadingText}
-                    </>
-                  ) : (
-                    <>
-                      <Search size={18} className="text-yellow-400" />
-                      Buscar Melhores Ofertas do Dia
-                    </>
-                  )}
-                </button>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => handleFetchBoschOnly()}
+                    disabled={isFetching}
+                    className="bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 px-5 py-2.5 rounded-lg font-bold flex items-center justify-center gap-2 transition-all disabled:opacity-70 shadow-sm"
+                  >
+                    Testar Modo: Bosch
+                  </button>
+                  <button
+                    onClick={() => handleFetchOffers(true)}
+                    disabled={isFetching}
+                    className="bg-black hover:bg-gray-800 text-white px-5 py-2.5 rounded-lg font-bold flex items-center justify-center gap-2 transition-all disabled:opacity-70 shadow-lg shadow-black/10"
+                  >
+                    {isFetching ? (
+                      <>
+                        <Loader2 size={18} className="animate-spin" />
+                        {loadingText}
+                      </>
+                    ) : (
+                      <>
+                        <Search size={18} className="text-yellow-400" />
+                        Buscar Melhores Ofertas do Dia
+                      </>
+                    )}
+                  </button>
+                </div>
               </div>
 
               {pendingOffers.length > 0 ? (
