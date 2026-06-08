@@ -4,6 +4,7 @@ import { DashboardStats } from './components/DashboardStats';
 import { OfferCard } from './components/OfferCard';
 import { HistoryTable } from './components/HistoryTable';
 import { KeywordsManager } from './components/KeywordsManager';
+import { DiagnosticPage } from './components/DiagnosticPage';
 import { fetchMercadoLivreOffers } from './services/mercadoLivreService';
 import { 
   getStoredOffers, 
@@ -18,7 +19,7 @@ import { Offer, Stats } from './types';
 import { Loader2, Search } from 'lucide-react';
 
 export default function App() {
-  const [currentTab, setCurrentTab] = useState<'dashboard' | 'history' | 'keywords' | 'settings'>('dashboard');
+  const [currentTab, setCurrentTab] = useState<'dashboard' | 'history' | 'keywords' | 'settings' | 'diagnostic'>('dashboard');
   const [offers, setOffers] = useState<Offer[]>([]);
   const [keywords, setKeywords] = useState<string[]>([]);
   const [lastUpdate, setLastUpdateState] = useState<string | null>(null);
@@ -185,6 +186,12 @@ export default function App() {
                 isFetching={isFetching}
                 loadingText={loadingText}
               />
+            </div>
+          )}
+
+          {currentTab === 'diagnostic' && (
+            <div className="animate-in fade-in duration-300">
+              <DiagnosticPage />
             </div>
           )}
 

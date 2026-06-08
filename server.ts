@@ -38,6 +38,10 @@ async function startServer() {
     }
   });
 
+  app.get("/api/health", (req, res) => {
+    res.json({ status: "ok" });
+  });
+
   // Vite middleware for development
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({

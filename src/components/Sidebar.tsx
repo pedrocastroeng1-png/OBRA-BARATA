@@ -1,10 +1,10 @@
-import { LayoutDashboard, Settings, History, Send, ListPlus } from 'lucide-react';
+import { LayoutDashboard, Settings, History, Send, ListPlus, Activity } from 'lucide-react';
 import React from 'react';
 import clsx from 'clsx';
 
 interface SidebarProps {
-  currentTab: 'dashboard' | 'history' | 'keywords' | 'settings';
-  onTabChange: (tab: 'dashboard' | 'history' | 'keywords' | 'settings') => void;
+  currentTab: 'dashboard' | 'history' | 'keywords' | 'settings' | 'diagnostic';
+  onTabChange: (tab: 'dashboard' | 'history' | 'keywords' | 'settings' | 'diagnostic') => void;
 }
 
 export function Sidebar({ currentTab, onTabChange }: SidebarProps) {
@@ -12,6 +12,7 @@ export function Sidebar({ currentTab, onTabChange }: SidebarProps) {
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'keywords', label: 'Palavras-Chave', icon: ListPlus },
     { id: 'history', label: 'Histórico', icon: History },
+    { id: 'diagnostic', label: 'Diagnóstico', icon: Activity },
     { id: 'settings', label: 'Configurações', icon: Settings },
   ] as const;
 
