@@ -20,11 +20,22 @@ async function startServer() {
     console.log(`[ML API] Fetching: ${mlApiUrl}`);
 
     try {
-      const response = await fetch(mlApiUrl);
+      const response = await fetch(mlApiUrl, {
+        headers: {
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/138 Safari/537.36",
+          "Accept": "application/json",
+          "Content-Type": "application/json"
+        }
+      });
       console.log(`[ML API] Response Status: ${response.status} ${response.statusText}`);
 
       if (!response.ok) {
-        throw new Error(`ML API responded with status: ${response.status}`);
+        const errorBody = await response.text();
+        console.error(`[ML API] Error full body: ${errorBody}`);
+        return res.status(response.status).json({
+          error: `ML API responded with status: ${response.status}`,
+          details: errorBody
+        });
       }
 
       const data = await response.json();
@@ -35,6 +46,42 @@ async function startServer() {
     } catch (error: any) {
       console.error(`[ML API] Error fetching ${query}:`, error.message);
       res.status(500).json({ error: "Internal Server Error", details: error.message });
+    }
+  });
+
+  app.get("/api/mercadolivre/test", async (req, res) => {
+    const targetUrl = `https://api.mercadolibre.com/sites/MLB/search?q=bosch`;
+
+    try {
+      const response = await fetch(targetUrl, {
+        headers: {
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/138 Safari/537.36",
+          "Accept": "application/json",
+          "Content-Type": "application/json"
+        }
+      });
+
+      const headersObj: Record<string, string> = {};
+      response.headers.forEach((value, key) => {
+        headersObj[key] = value;
+      });
+
+      const textBody = await response.text();
+      let parsedBody = null;
+      try {
+        parsedBody = JSON.parse(textBody);
+      } catch (e) {
+        parsedBody = textBody; // Not valid JSON
+      }
+
+      return res.status(200).json({
+        status: response.status,
+        statusText: response.statusText,
+        headers: headersObj,
+        body: parsedBody
+      });
+    } catch (error: any) {
+      return res.status(500).json({ error: "Fetch failed", details: error.message });
     }
   });
 
